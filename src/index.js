@@ -1,4 +1,4 @@
-import React from 'react'
+import React from './myReact'
 
 /**
  * 下面👇用
@@ -6,8 +6,13 @@ import React from 'react'
  * node 代表DOM元素
  */
 
-const element = React.createElement("h1", { title: 'foo' }, 'hello world')
-// console.log(element)
+const element = (
+    <div id="foo">
+        <a>bar</a>
+        <b />
+    </div>
+)
+console.log(element)
 
 const container = document.getElementById("root")
 

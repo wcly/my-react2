@@ -1,0 +1,1 @@
+export const TEXT_ELEMENT = "TEXT_ELEMENT" // 标记为文本结点
