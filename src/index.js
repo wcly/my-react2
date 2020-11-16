@@ -1,4 +1,5 @@
 import React from './myReact'
+import ReactDOM from './myReact/ReactDOM'
 
 /**
  * 下面👇用
@@ -16,9 +17,4 @@ console.log(element)
 
 const container = document.getElementById("root")
 
-const node = document.createElement(element.type)
-node['title'] = element.props.title
-const text = document.createTextNode('')
-text['nodeValue'] = element.props.children
-node.appendChild(text)
-container.appendChild(node)
+ReactDOM.render(element, container)
