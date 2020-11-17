@@ -49,7 +49,12 @@ function commitWork(fiber) {
     if (!fiber) {
         return
     }
-    const domParent = fiber.parent.dom
+    let domParentFiber = fiber.parent
+    // 有些结点可能没有dom结点（函数结点），往上找到有dom的节点
+    while (!domParentFiber.dom) {
+        domParentFiber = domParentFiber.parent
+    }
+    const domParent = domParentFiber.dom
     if (
         fiber.effectTag === EFFECT_TAG_PLACEMENT &&
         fiber.dom !== null
@@ -58,7 +63,7 @@ function commitWork(fiber) {
         domParent.appendChild(fiber.dom)
     } else if (fiber.effectTag === EFFECT_TAG_DELETION) {
         // 删除DOM结点
-        domParent.removeChild(fiber.dom)
+        commitDeletion(fiber, domParent)
     } else if (
         fiber.effectTag === "UPDATE" &&
         fiber.dom !== null
@@ -72,6 +77,20 @@ function commitWork(fiber) {
     }
     commitWork(fiber.child)
     commitWork(fiber.sibling)
+}
+
+/**
+ * 删除dom结点
+ * @param {*} fiber fiber结点
+ * @param {*} domParent dom父节点
+ */
+function commitDeletion(fiber, domParent) {
+    // 往下找，找到有dom结点的时候删除
+    if (fiber.dom) {
+        domParent.removeChild(fiber.dom)
+    } else {
+        commitDeletion(fiber.child, domParent)
+    }
 }
 
 /**
@@ -169,19 +188,15 @@ function workLoop(deadline) {
 requestIdleCallback(workLoop)
 
 function performUnitOfWork(fiber) {
-    // 1. 添加dom结点
-    if (!fiber.dom) {
-        fiber.dom = createDom(fiber)
-    }
-    if (fiber.parent) {
-        fiber.parent.dom.appendChild(fiber.dom)
+    // 生成fiber结点
+    const isFunctionComponent = fiber.type instanceof Function
+    if (isFunctionComponent) {
+        updateFunctionComponent(fiber)
+    } else {
+        updateHostComponent(fiber)
     }
 
-    // 2. 将每个child转换为fiber结点
-    const elements = fiber.props.children
-    reconcileChildren(fiber, elements)
-
-    // 3. 返回下一个要生成的fiber结点
+    // 返回下一个要生成的fiber结点
     // 找child结点
     if (fiber.child) {
         return fiber.child
@@ -195,6 +210,26 @@ function performUnitOfWork(fiber) {
         // 往父节点找
         nextFiber = nextFiber.parent
     }
+}
+
+/**
+ * 渲染函数组件
+ * @param {*} fiber fiber结点
+ */
+function updateFunctionComponent(fiber) {
+    const children = [fiber.type(fiber.props)]
+    reconcileChildren(fiber, children)
+}
+
+/**
+ * 渲染宿主结点
+ * @param {*} fiber fiber结点
+ */
+function updateHostComponent(fiber) {
+    if (!fiber.dom) {
+        fiber.dom = createDom(fiber)
+    }
+    reconcileChildren(fiber, fiber.props.children)
 }
 
 /**
@@ -247,13 +282,13 @@ function reconcileChildren(wipFiber, elements) {
             deletions.push(oldFiber)
         }
 
-        if(oldFiber){
+        if (oldFiber) {
             oldFiber = oldFiber.sibling
         }
 
-        if(index === 0){
+        if (index === 0) {
             wipFiber.child = newFiber
-        }else if(element){
+        } else if (element) {
             prevSibing.sibling = newFiber
         }
 

@@ -8,7 +8,7 @@ import { TEXT_ELEMENT } from './const'
  */
 function createElement(type, props, ...children) {
     return {
-        type,
+        type: type,
         props: {
             ...props,
             children: children.map(child =>

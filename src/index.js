@@ -1,12 +1,11 @@
 import React from './myReact'
 import ReactDOM from './myReact/ReactDOM'
 
-const element = (
-    <div id="foo">
-        <a>bar</a>
-        <b />
-    </div>
-)
+function App(props) {
+    return <h1>Hi {props.name}</h1>
+}
+
+const element = <App name="foo" />
 
 const container = document.getElementById("root")
 
