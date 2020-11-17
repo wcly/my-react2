@@ -13,7 +13,6 @@ const element = (
         <b />
     </div>
 )
-console.log(element)
 
 const container = document.getElementById("root")
 

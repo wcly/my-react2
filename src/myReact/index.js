@@ -7,7 +7,6 @@ import { TEXT_ELEMENT } from './const'
  * @param  {...any} children 子节点
  */
 function createElement(type, props, ...children) {
-    console.log('执行 createElement')
     return {
         type,
         props: {

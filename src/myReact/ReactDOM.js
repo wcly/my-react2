@@ -1,7 +1,7 @@
 import { TEXT_ELEMENT } from "./const"
 
-// 下一个浏览器空闲时间要执行的任务
-let nextUnitOfWork = null
+let nextUnitOfWork = null // 下一个浏览器空闲时间要执行的任务
+let wipRoot = null // 用于记录工作过程中的根节点
 
 /**
  * 将fiber结点装换为真实DOM结点
@@ -23,19 +23,40 @@ function createDom(fiber) {
     return dom
 }
 
+function commitRoot(){
+    commitWork(wipRoot.child)
+    wipRoot = null
+}
+
+/**
+ * 递归渲染dom树
+ * @param {*} fiber fiber结点
+ */
+function commitWork(fiber){
+    if(!fiber){
+        return
+    }
+    const domParent = fiber.parent.dom
+    domParent.appendChild(fiber.dom)
+    commitWork(fiber.child)
+    commitWork(fiber.sibling)
+}
+
 /**
  * 渲染函数，将vdom转为dom
  * @param {*} element react元素
  * @param {*} container dom容器
  */
 function render(element, container) {
-    // 设置nextUnitOfWork为根fiber结点
-    nextUnitOfWork = {
+    // 根fiber结点
+    wipRoot = {
         dom: container,
         props: {
             children: [element],
         }
     }
+    // 从根结点开始工作
+    nextUnitOfWork = wipRoot
 }
 
 function workLoop(deadline) {
@@ -48,6 +69,12 @@ function workLoop(deadline) {
         // 剩余空闲时间不足一毫秒的时候暂停执行
         shouldYield = deadline.timeRemaining() < 1
     }
+
+    // 生成整个fiber tree之后提交给DOM
+    if(!nextUnitOfWork && wipRoot){
+        commitRoot()
+    }
+
     requestIdleCallback(workLoop)
 }
 
@@ -55,7 +82,6 @@ function workLoop(deadline) {
 requestIdleCallback(workLoop)
 
 function performUnitOfWork(fiber) {
-    console.log('current render fiber', fiber)
     // 1. 添加dom结点
     if (!fiber.dom) {
         fiber.dom = createDom(fiber)
@@ -87,7 +113,7 @@ function performUnitOfWork(fiber) {
         index++
     }
 
-    // 3. 返回下一个要渲染的fiber结点
+    // 3. 返回下一个要生成的fiber结点
     // 找child结点
     if (fiber.child) {
         return fiber.child
