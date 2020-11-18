@@ -4,6 +4,8 @@ let nextUnitOfWork = null // 下一个浏览器空闲时间要执行的任务
 let wipRoot = null // 用于记录工作过程中的根节点
 let currentRoot = null // 上一个提交的fiber根节点
 let deletions = null // 需要删除的fiber结点
+let wipFiber = null // 工作中的fiber结点
+let hookIndex = null // hook索引
 
 // 是不是事件
 const isEvent = key => key.startsWith('on')
@@ -25,11 +27,7 @@ function createDom(fiber) {
             ? document.createTextNode("")
             : document.createElement(fiber.type)
 
-    Object.keys(fiber.props)
-        .filter(isProperty)
-        .forEach(name => {
-            dom[name] = fiber.props[name]
-        })
+    updateDom(dom, {}, fiber.props);
 
     return dom
 }
@@ -65,7 +63,7 @@ function commitWork(fiber) {
         // 删除DOM结点
         commitDeletion(fiber, domParent)
     } else if (
-        fiber.effectTag === "UPDATE" &&
+        fiber.effectTag === EFFECT_TAG_UPDATE &&
         fiber.dom !== null
     ) {
         // 更新DOM节点
@@ -217,6 +215,9 @@ function performUnitOfWork(fiber) {
  * @param {*} fiber fiber结点
  */
 function updateFunctionComponent(fiber) {
+    wipFiber = fiber
+    hookIndex = 0
+    wipFiber.hooks = []
     const children = [fiber.type(fiber.props)]
     reconcileChildren(fiber, children)
 }
@@ -242,9 +243,10 @@ function reconcileChildren(wipFiber, elements) {
     // 老结点
     let oldFiber = wipFiber.alternate && wipFiber.alternate.child
     let prevSibing = null
+
     while (
         index < elements.length ||
-        oldFiber !== null
+        oldFiber
     ) {
         const element = elements[index]
         let newFiber = null
@@ -273,7 +275,7 @@ function reconcileChildren(wipFiber, elements) {
                 dom: null,
                 parent: wipFiber,
                 alternate: null,
-                effectTag: EFFECT_TAG_PLACEMENT
+                effectTag: EFFECT_TAG_PLACEMENT,
             }
         }
         if (oldFiber && !sameType) {
@@ -295,6 +297,37 @@ function reconcileChildren(wipFiber, elements) {
         prevSibing = newFiber
         index++
     }
+}
+
+export function useState(initial) {
+    const oldHook =
+        wipFiber.alternate &&
+        wipFiber.alternate.hooks &&
+        wipFiber.alternate.hooks[hookIndex]
+    const hook = {
+        state: oldHook ? oldHook.state : initial,
+        queue: []
+    }
+
+    const actions = oldHook ? oldHook.queue : []
+    actions.forEach(action => {
+        hook.state = action(hook.state)
+    })
+
+    const setState = action => {
+        hook.queue.push(action)
+        wipRoot = {
+            dom: currentRoot.dom,
+            props: currentRoot.props,
+            alternate: currentRoot
+        }
+        nextUnitOfWork = wipRoot
+        deletions = []
+    }
+
+    wipFiber.hooks.push(hook)
+    hookIndex++
+    return [hook.state, setState]
 }
 
 const ReactDOM = {

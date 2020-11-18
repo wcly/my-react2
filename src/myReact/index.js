@@ -1,4 +1,5 @@
 import { TEXT_ELEMENT } from './const'
+import { useState } from './ReactDOM'
 
 /**
  * 创建react元素
@@ -35,7 +36,9 @@ function createTextElement(text) {
 }
 
 const React = {
-    createElement
+    createElement,
 }
+
+export { useState }
 
 export default React
