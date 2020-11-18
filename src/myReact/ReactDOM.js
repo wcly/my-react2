@@ -25,11 +25,7 @@ function createDom(fiber) {
             ? document.createTextNode("")
             : document.createElement(fiber.type)
 
-    Object.keys(fiber.props)
-        .filter(isProperty)
-        .forEach(name => {
-            dom[name] = fiber.props[name]
-        })
+    updateDom(dom, {}, fiber.props);
 
     return dom
 }
@@ -60,7 +56,7 @@ function commitWork(fiber) {
         // 删除DOM结点
         domParent.removeChild(fiber.dom)
     } else if (
-        fiber.effectTag === "UPDATE" &&
+        fiber.effectTag === EFFECT_TAG_UPDATE &&
         fiber.dom !== null
     ) {
         // 更新DOM节点
@@ -209,7 +205,7 @@ function reconcileChildren(wipFiber, elements) {
     let prevSibing = null
     while (
         index < elements.length ||
-        oldFiber !== null
+        oldFiber
     ) {
         const element = elements[index]
         let newFiber = null
@@ -247,13 +243,13 @@ function reconcileChildren(wipFiber, elements) {
             deletions.push(oldFiber)
         }
 
-        if(oldFiber){
+        if (oldFiber) {
             oldFiber = oldFiber.sibling
         }
 
-        if(index === 0){
+        if (index === 0) {
             wipFiber.child = newFiber
-        }else if(element){
+        } else if (element) {
             prevSibing.sibling = newFiber
         }
 
