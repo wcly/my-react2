@@ -23,6 +23,9 @@ function createDom(fiber) {
     return dom
 }
 
+/**
+ * 提交
+ */
 function commitRoot(){
     commitWork(wipRoot.child)
     wipRoot = null
@@ -85,9 +88,6 @@ function performUnitOfWork(fiber) {
     // 1. 添加dom结点
     if (!fiber.dom) {
         fiber.dom = createDom(fiber)
-    }
-    if (fiber.parent) {
-        fiber.parent.dom.appendChild(fiber.dom)
     }
 
     // 2. 将每个child转换为fiber结点
