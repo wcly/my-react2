@@ -169,9 +169,6 @@ function performUnitOfWork(fiber) {
     if (!fiber.dom) {
         fiber.dom = createDom(fiber)
     }
-    if (fiber.parent) {
-        fiber.parent.dom.appendChild(fiber.dom)
-    }
 
     // 2. 将每个child转换为fiber结点
     const elements = fiber.props.children
