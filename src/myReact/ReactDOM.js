@@ -305,10 +305,11 @@ export function useState(initial) {
         wipFiber.alternate.hooks &&
         wipFiber.alternate.hooks[hookIndex]
     const hook = {
-        state: oldHook ? oldHook.state : initial,
+        state: oldHook ? oldHook.state : initial, // 有旧的hook就取旧hook的state，没有就使用用户传入的初始值
         queue: []
     }
 
+    // 模拟多次触发setState
     const actions = oldHook ? oldHook.queue : []
     actions.forEach(action => {
         hook.state = action(hook.state)
@@ -316,6 +317,7 @@ export function useState(initial) {
 
     const setState = action => {
         hook.queue.push(action)
+        // state更新，重新设置wipRoot的值，触发更新
         wipRoot = {
             dom: currentRoot.dom,
             props: currentRoot.props,
@@ -325,8 +327,10 @@ export function useState(initial) {
         deletions = []
     }
 
+    // 每次调用一次useState，入栈一个hook，索引加1
     wipFiber.hooks.push(hook)
     hookIndex++
+
     return [hook.state, setState]
 }
 
